@@ -10,18 +10,23 @@
 	},
 	"dependencies": {
 		"@paralleldrive/cuid2": "^2.2.2",
+		"@radix-ui/react-label": "^2.1.7",
+		"@radix-ui/react-slot": "^1.2.3",
 		"@vercel/functions": "^2.0.3",
 		"@whop/api": "^0.0.29",
 		"@whop/react": "0.2.14",
+		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"dotenv": "^17.0.1",
 		"drizzle-orm": "^0.44.2",
+		"framer": "^2.4.1",
 		"lucide-react": "^0.525.0",
 		"next": "15.3.2",
 		"pg": "^8.16.3",
-		"react": ">=18.0.0",
-		"react-dom": ">=18.0.0",
-		"tailwind-merge": "^3.3.1"
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0",
+		"tailwind-merge": "^3.3.1",
+		"tailwindcss-animate": "^1.0.7"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
@@ -30,10 +35,12 @@
 		"@types/react": "^19",
 		"@types/react-dom": "^19",
 		"@whop-apps/dev-proxy": "0.0.1-canary.116",
+		"autoprefixer": "^10.4.21",
 		"dotenv-cli": "^8.0.0",
 		"patch-package": "^8.0.0",
+		"postcss": "^8.5.6",
 		"postinstall-postinstall": "^2.1.0",
-		"tailwindcss": "^4",
+		"tailwindcss": "^3.4.3",
 		"typescript": "^5"
 	},
 	"packageManager": "pnpm@9.15.9+sha512.68046141893c66fad01c079231128e9afb89ef87e2691d69e4d40eee228988295fd4682181bae55b58418c3a253bde65a505ec7c5f9403ece5cc3cd37dcf2531"
