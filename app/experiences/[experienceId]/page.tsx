@@ -1,4 +1,4 @@
-import { whopSdk } from "@/lib/whop-sdk";
+import { whopSdk } from "app/lib/whop-sdk";
 import { headers } from "next/headers";
 
 export default async function ExperiencePage({
