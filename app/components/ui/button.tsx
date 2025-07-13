@@ -1,17 +1,25 @@
-// components/ui/button.tsx
-import React from 'react';
+// app/components/ui/button.tsx
+import React from "react";
+import { cn } from "app/lib/utils";
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement>;
+export type ButtonProps = {
+  children: React.ReactNode;
+  onClick?: () => void;
+  variant?: "primary" | "secondary"; // ✅ allow variants
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
-const Button: React.FC<ButtonProps> = ({ children, ...props }) => {
+export default function Button({ children, onClick, variant = "primary", className, ...props }: ButtonProps) {
   return (
     <button
+      onClick={onClick}
+      className={cn(
+        "px-4 py-2 rounded",
+        variant === "primary" ? "bg-black text-white" : "bg-gray-200 text-black",
+        className
+      )}
       {...props}
-      className={`bg-black text-white px-4 py-2 rounded ${props.className ?? ''}`}
     >
       {children}
     </button>
   );
-};
-
-export default Button;
+}
