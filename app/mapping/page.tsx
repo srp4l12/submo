@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useEffect, useState } from "react";
 import Input from "app/components/ui/input";
@@ -11,11 +11,10 @@ export default function MappingPage() {
   const [whopCompanyId, setWhopCompanyId] = useState<string>("");
 
   useEffect(() => {
-    // Fetch connected accounts from your backend
     const fetchAccounts = async () => {
-      const res = await fetch("/api/accounts");
+      const res = await fetch("/api/connect"); // ✅ Fixed route
       const data = await res.json();
-      setAccounts(data.accounts); // Make sure the API returns { accounts: [...] }
+      setAccounts(data.accounts);
     };
 
     fetchAccounts();
@@ -33,7 +32,7 @@ export default function MappingPage() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        connected_account_id: selectedAccount,
+        connected_account_id: selectedAccount, // ✅ Fixed key name to match backend
         whop_company_id: whopCompanyId,
       }),
     });

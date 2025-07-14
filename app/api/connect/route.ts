@@ -8,14 +8,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// GET all connected accounts (for testing — later we’ll filter by logged-in user)
 export async function GET() {
   try {
-    console.log('Fetching connected accounts...');
+    console.log('Fetching all connected accounts...');
 
     const { data, error } = await supabase
       .from('connected_accounts')
-      .select('*')
-      .eq('user_id', 'admin'); // static test for now
+      .select('*'); // returns all rows (no filter for now)
 
     if (error) {
       console.error('Supabase GET error:', error.message);
@@ -29,6 +29,7 @@ export async function GET() {
   }
 }
 
+// POST a new connected account
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase.from('connected_accounts').insert([
       {
-        user_id: 'admin',
+        user_id: 'admin', // still static for now
         platform,
         username,
         profile_link,
@@ -61,5 +62,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error('Unexpected POST error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
-  }
+  
+	}
+
 }
