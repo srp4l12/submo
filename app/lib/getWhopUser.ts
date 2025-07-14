@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 
-export async function getCurrentUserId(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("whop_user_id")?.value;
+export async function getWhopUserId(): Promise<string | null> {
+  const cookieStore = await cookies(); // ✅ await it
+  const userId = cookieStore.get("whop-user-id")?.value;
+
   return userId || null;
 }
