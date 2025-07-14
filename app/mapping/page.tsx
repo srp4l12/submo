@@ -1,11 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function MappingPage() {
-  const [accountId, setAccountId] = useState("");
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState("");
   const [companyId, setCompanyId] = useState("");
   const [status, setStatus] = useState("");
+
+  const fetchVerifiedAccounts = async () => {
+    const res = await fetch("/api/connect");
+    const data = await res.json();
+    if (res.ok) {
+      const verified = data.accounts.filter((acc: any) => acc.verified);
+      setAccounts(verified);
+    }
+  };
+
+  useEffect(() => {
+    fetchVerifiedAccounts();
+  }, []);
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -14,7 +28,7 @@ export default function MappingPage() {
     const res = await fetch("/api/mapping", {
       method: "POST",
       body: JSON.stringify({
-        connected_account_id: accountId,
+        connected_account_id: selectedAccount,
         whop_company_id: companyId,
       }),
       headers: {
@@ -27,27 +41,36 @@ export default function MappingPage() {
       setStatus(`❌ ${data.error}`);
     } else {
       setStatus("✅ Mapping successful!");
-      setAccountId("");
+      setSelectedAccount("");
       setCompanyId("");
     }
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl mb-4">Map Connected Account to Whop Company</h1>
+    <div className="p-4 space-y-4">
+      <h1 className="text-2xl font-bold">Map Account to Whop Creator</h1>
+
       <form onSubmit={handleSubmit} className="space-y-2">
-        <input
-          placeholder="Connected Account ID"
-          value={accountId}
-          onChange={(e) => setAccountId(e.target.value)}
+        <select
+          value={selectedAccount}
+          onChange={(e) => setSelectedAccount(e.target.value)}
           className="border p-2 w-full"
-        />
+        >
+          <option value="">Select Verified Account</option>
+          {accounts.map((acc: any) => (
+            <option key={acc.id} value={acc.id}>
+              {acc.platform} — @{acc.username}
+            </option>
+          ))}
+        </select>
+
         <input
           placeholder="Whop Company ID"
           value={companyId}
           onChange={(e) => setCompanyId(e.target.value)}
           className="border p-2 w-full"
         />
+
         <button
           type="submit"
           className="bg-black text-white px-4 py-2 rounded"
@@ -55,7 +78,8 @@ export default function MappingPage() {
           Map Account
         </button>
       </form>
-      <p className="mt-2">{status}</p>
+
+      <p className="text-sm">{status}</p>
     </div>
   );
 }
