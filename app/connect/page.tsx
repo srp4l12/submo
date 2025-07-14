@@ -61,6 +61,8 @@ export default function ConnectPage() {
     }
   };
 
+  const verifiedAccounts = accounts.filter((acc) => acc.verified);
+
   return (
     <div className="max-w-xl mx-auto mt-10">
       <h1 className="text-2xl font-bold mb-4">Connect Your Social Media</h1>
@@ -129,6 +131,17 @@ export default function ConnectPage() {
           </div>
         ))}
       </div>
+
+      {verifiedAccounts.length > 0 && (
+        <div className="mt-8 text-center">
+          <button
+            onClick={() => window.location.href = '/mapping'}
+            className="bg-green-600 text-white px-6 py-2 rounded"
+          >
+            Continue to Mapping
+          </button>
+        </div>
+      )}
     </div>
   );
 }
