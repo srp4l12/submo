@@ -1,85 +1,97 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from "react";
 
 export default function MappingPage() {
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState("");
-  const [companyId, setCompanyId] = useState("");
-  const [status, setStatus] = useState("");
+  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  const [message, setMessage] = useState("");
 
-  const fetchVerifiedAccounts = async () => {
-    const res = await fetch("/api/connect");
-    const data = await res.json();
-    if (res.ok) {
-      const verified = data.accounts.filter((acc: any) => acc.verified);
-      setAccounts(verified);
-    }
-  };
-
+  // Fetch verified connected accounts
   useEffect(() => {
-    fetchVerifiedAccounts();
+    fetch("/api/connect")
+      .then(res => res.json())
+      .then(data => {
+        const verified = data.accounts.filter((a: any) => a.verified);
+        setAccounts(verified);
+        if (verified.length > 0) {
+          setSelectedAccount(verified[0].id);
+        }
+      });
   }, []);
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
-    setStatus("Submitting...");
+  // Fetch companies from the Whop company route
+  useEffect(() => {
+    fetch("/api/whop/companies")
+      .then(res => res.json())
+      .then(data => {
+        setCompanies(data.companies || []);
+        if (data.companies?.length > 0) {
+          setSelectedCompanyId(data.companies[0].id);
+        }
+      });
+  }, []);
 
+  const handleSubmit = async () => {
     const res = await fetch("/api/mapping", {
       method: "POST",
       body: JSON.stringify({
         connected_account_id: selectedAccount,
-        whop_company_id: companyId,
+        whop_company_id: selectedCompanyId,
       }),
-      headers: {
-        "Content-Type": "application/json",
-      },
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-      setStatus(`❌ ${data.error}`);
+    const result = await res.json();
+
+    if (res.ok) {
+      setMessage("✅ Account mapped successfully!");
     } else {
-      setStatus("✅ Mapping successful!");
-      setSelectedAccount("");
-      setCompanyId("");
+      setMessage(`❌ ${result.error || "Something went wrong."}`);
     }
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold">Map Account to Whop Creator</h1>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">Map Verified Account to Whop Creator</h2>
 
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <select
-          value={selectedAccount}
-          onChange={(e) => setSelectedAccount(e.target.value)}
-          className="border p-2 w-full"
-        >
-          <option value="">Select Verified Account</option>
-          {accounts.map((acc: any) => (
-            <option key={acc.id} value={acc.id}>
-              {acc.platform} — @{acc.username}
-            </option>
-          ))}
-        </select>
+      {/* Verified Social Accounts Dropdown */}
+      <label className="block mb-2 text-sm font-semibold text-white">Select Verified Social Account</label>
+      <select
+        value={selectedAccount}
+        onChange={(e) => setSelectedAccount(e.target.value)}
+        className="w-full mb-4 p-2 rounded bg-black border border-white text-white"
+      >
+        {accounts.map((acc: any) => (
+          <option key={acc.id} value={acc.id}>
+            {acc.platform} — @{acc.username}
+          </option>
+        ))}
+      </select>
 
-        <input
-          placeholder="Whop Company ID"
-          value={companyId}
-          onChange={(e) => setCompanyId(e.target.value)}
-          className="border p-2 w-full"
-        />
+      {/* Whop Companies Dropdown */}
+      <label className="block mb-2 text-sm font-semibold text-white">Select Creator Whop</label>
+      <select
+        value={selectedCompanyId}
+        onChange={(e) => setSelectedCompanyId(e.target.value)}
+        className="w-full mb-4 p-2 rounded bg-black border border-white text-white"
+      >
+        {companies.map((comp: any) => (
+          <option key={comp.id} value={comp.id}>
+            {comp.name}
+          </option>
+        ))}
+      </select>
 
-        <button
-          type="submit"
-          className="bg-black text-white px-4 py-2 rounded"
-        >
-          Map Account
-        </button>
-      </form>
+      <button
+        onClick={handleSubmit}
+        className="bg-white text-black px-4 py-2 rounded hover:bg-gray-200"
+      >
+        Map Account
+      </button>
 
-      <p className="text-sm">{status}</p>
+      {message && <p className="mt-4 text-white">{message}</p>}
     </div>
   );
 }

@@ -1,34 +1,39 @@
-// app/api/whop/companies/route.ts
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
+import { makeUserTokenVerifier } from "@whop/api";
+import { whopSdk } from "app/lib/whop-sdk";
 
-import { NextRequest, NextResponse } from 'next/server';
+const verifyUserToken = makeUserTokenVerifier({
+  appId: process.env.NEXT_PUBLIC_WHOP_APP_ID!,
+});
 
-export async function GET(req: NextRequest) {
-  const userId = req.headers.get('x-whop-user-id');
+export async function GET() {
+  const headerList = await headers();
+  const token = headerList.get("x-whop-user-token");
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Missing Whop user ID in headers' }, { status: 400 });
+  if (!token) {
+    return NextResponse.json({ error: "Missing token" }, { status: 401 });
   }
 
   try {
+    const { userId } = await verifyUserToken(token);
+
+    // ✅ Use the REST endpoint to fetch memberships
     const response = await fetch(`https://api.whop.com/api/v2/users/${userId}/memberships`, {
       headers: {
-        Authorization: `Bearer ${process.env.WHOP_API_KEY}`,
-        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.WHOP_API_KEY!}`,
+        "Content-Type": "application/json",
       },
     });
 
-    const result = await response.json();
+    const memberships = await response.json();
 
-    if (!response.ok) {
-      console.error('Whop API error:', result);
-      return NextResponse.json({ error: result }, { status: response.status });
-    }
+    // Get unique companies from memberships
+    const companies = memberships.map((m: any) => m.company);
 
-    const joinedCompanies = result?.memberships?.map((m: any) => m.company) ?? [];
-
-    return NextResponse.json({ companies: joinedCompanies }, { status: 200 });
-  } catch (error: any) {
-    console.error('Server error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ companies });
+  } catch (err) {
+    console.error("Failed to fetch companies:", err);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
