@@ -1,38 +1,29 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { ApolloClient, InMemoryCache, createHttpLink, gql } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
 
 const httpLink = createHttpLink({
-  uri: "https://api.whop.com/public-graphql",
+  uri: "https://api.whop.com/graphql", // This is V5 GraphQL
 });
 
-export async function GET() {
-  const headersList = await headers();
-  const token = headersList.get("x-whop-user-token");
+const authLink = setContext((_, { headers }) => {
+  return {
+    headers: {
+      ...headers,
+      authorization: `Bearer ${process.env.WHOP_API_KEY!}`,
+    },
+  };
+});
 
-  if (!token) {
-    return NextResponse.json({ error: "Missing token" }, { status: 401 });
-  }
+const client = new ApolloClient({
+  link: authLink.concat(httpLink),
+  cache: new InMemoryCache(),
+});
 
-  const authLink = setContext((_, { headers }) => {
-    return {
-      headers: {
-        ...headers,
-        authorization: `Bearer ${process.env.WHOP_API_KEY}`,
-        "x-whop-user-token": token,
-      },
-    };
-  });
-
-  const client = new ApolloClient({
-    link: authLink.concat(httpLink),
-    cache: new InMemoryCache(),
-  });
-
-  const GET_USER_MEMBERSHIPS = gql`
-    query GetUserMemberships {
-      getUserMemberships {
+const GET_COMPANIES = gql`
+  query {
+    viewer {
+      memberships {
         nodes {
           company {
             id
@@ -41,11 +32,20 @@ export async function GET() {
         }
       }
     }
-  `;
+  }
+`;
 
+export async function GET() {
   try {
-    const { data } = await client.query({ query: GET_USER_MEMBERSHIPS });
-    const companies = data.getUserMemberships.nodes.map((node: any) => node.company);
+    const { data } = await client.query({ query: GET_COMPANIES });
+
+    const companies = data.viewer.memberships.nodes
+      .filter((node: any) => node.company?.id && node.company?.title)
+      .map((node: any) => ({
+        id: node.company.id,
+        name: node.company.title,
+      }));
+
     return NextResponse.json({ companies });
   } catch (error) {
     console.error("Apollo Error:", error);
