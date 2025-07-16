@@ -1,29 +1,17 @@
 import { NextResponse } from "next/server";
-import { ApolloClient, InMemoryCache, createHttpLink, gql } from "@apollo/client/core";
-import { setContext } from "@apollo/client/link/context";
+import { headers } from "next/headers";
 
-const httpLink = createHttpLink({
-  uri: "https://api.whop.com/graphql", // This is V5 GraphQL
-});
+export async function GET() {
+  const headersList = await headers();
+  const token = headersList.get("x-whop-user-token");
 
-const authLink = setContext((_, { headers }) => {
-  return {
-    headers: {
-      ...headers,
-      authorization: `Bearer ${process.env.WHOP_API_KEY!}`,
-    },
-  };
-});
+  if (!token) {
+    return NextResponse.json({ error: "Missing token" }, { status: 401 });
+  }
 
-const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache(),
-});
-
-const GET_COMPANIES = gql`
-  query {
-    viewer {
-      memberships {
+  const query = `
+    query {
+      getUserMemberships {
         nodes {
           company {
             id
@@ -32,23 +20,31 @@ const GET_COMPANIES = gql`
         }
       }
     }
-  }
-`;
+  `;
 
-export async function GET() {
   try {
-    const { data } = await client.query({ query: GET_COMPANIES });
+    const response = await fetch("https://api.whop.com/public-graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.WHOP_API_KEY}`,
+        "Content-Type": "application/json",
+        "x-whop-user-token": token,
+      },
+      body: JSON.stringify({ query }),
+    });
 
-    const companies = data.viewer.memberships.nodes
-      .filter((node: any) => node.company?.id && node.company?.title)
-      .map((node: any) => ({
-        id: node.company.id,
-        name: node.company.title,
-      }));
+    const json = await response.json();
+
+    if (!json.data) {
+      console.error("GraphQL error:", json.errors);
+      return NextResponse.json({ error: "GraphQL query failed" }, { status: 500 });
+    }
+
+    const companies = json.data.getUserMemberships.nodes.map((node: any) => node.company);
 
     return NextResponse.json({ companies });
   } catch (error) {
-    console.error("Apollo Error:", error);
+    console.error("GraphQL Fetch Error:", error);
     return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 });
   }
 }
