@@ -24,14 +24,25 @@ export default function MappingPage() {
 
   // Fetch companies from the Whop company route
   useEffect(() => {
-    fetch("/api/whop/companies")
-      .then(res => res.json())
-      .then(data => {
-        setCompanies(data.companies || []);
-        if (data.companies?.length > 0) {
-          setSelectedCompanyId(data.companies[0].id);
+    const fetchCompanies = async () => {
+      try {
+        const res = await fetch("/api/whop/companies");
+        const data = await res.json();
+        if (res.ok) {
+          const cleaned = data.companies.filter((c: any) => c.id && c.title);
+          setCompanies(cleaned);
+          if (cleaned.length > 0) {
+            setSelectedCompanyId(cleaned[0].id);
+          }
+        } else {
+          console.error("Failed to fetch companies:", data.error);
         }
-      });
+      } catch (err) {
+        console.error("Error fetching companies:", err);
+      }
+    };
+
+    fetchCompanies();
   }, []);
 
   const handleSubmit = async () => {
@@ -79,7 +90,7 @@ export default function MappingPage() {
       >
         {companies.map((comp: any) => (
           <option key={comp.id} value={comp.id}>
-            {comp.name}
+            {comp.title}
           </option>
         ))}
       </select>
