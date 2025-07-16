@@ -1,48 +1,41 @@
+// app/api/whop/companies/route.ts
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { whopSdk } from "app/lib/whop-sdk";
 
 export async function GET() {
-  const headersList = await headers();
-  const token = headersList.get("x-whop-user-token");
-
-  console.log("🔥 [Companies API] x-whop-user-token:", token);
-
-  if (!token) {
-    console.warn("❌ Missing Whop user token");
-    return NextResponse.json({ error: "Missing token" }, { status: 401 });
-  }
-
   try {
-    // Decode the user ID from token
+    const headersList = await headers();
+
+    // ✅ Extract and verify the user from the x-whop-user-token header
     const { userId } = await whopSdk.verifyUserToken(headersList);
-    console.log("✅ Decoded userId:", userId);
 
-    // Fetch memberships from Whop REST API
-    const response = await fetch(`https://api.whop.com/api/v2/users/${userId}/memberships`, {
-      headers: {
-        Authorization: `Bearer ${process.env.WHOP_API_KEY!}`,
-        "Content-Type": "application/json",
-      },
-    });
+    // ❗Here you should have a list of companies you want to check for user access.
+    // For now, let’s hardcode a few company IDs you own or test with:
+    const knownCompanyIds = [
+      "biz_4j1aKXjudxeCRt", // Example Company 1
+      "biz_abc1234567890", // Add more real ones here as needed
+    ];
 
-    const memberships = await response.json();
-    console.log("📦 Raw memberships response:", memberships);
+    const companiesWithAccess = [];
 
-    if (!Array.isArray(memberships)) {
-      throw new Error("Invalid memberships response");
+    for (const companyId of knownCompanyIds) {
+      const result = await whopSdk.access.checkIfUserHasAccessToCompany({
+        companyId,
+        userId,
+      });
+
+      if (result.hasAccess) {
+        companiesWithAccess.push({
+          id: companyId,
+          name: `${companyId} (${result.accessLevel})`, // optional - improve this later
+        });
+      }
     }
 
-    // Extract valid companies
-    const companies = memberships
-      .map((m: any) => m.company)
-      .filter((company: any) => company && company.id && company.title);
-
-    console.log("🏢 Filtered companies:", companies);
-
-    return NextResponse.json({ companies });
+    return NextResponse.json({ companies: companiesWithAccess });
   } catch (err) {
-    console.error("❌ Company Fetch Error:", err);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    console.error("Whop Company Fetch Error:", err);
+    return NextResponse.json({ error: "Unauthorized or failed" }, { status: 401 });
   }
 }
