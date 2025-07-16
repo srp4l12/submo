@@ -1,41 +1,54 @@
-// app/api/whop/companies/route.ts
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { whopSdk } from "app/lib/whop-sdk";
+import { headers } from "next/headers";
+import { ApolloClient, InMemoryCache, createHttpLink, gql } from "@apollo/client/core";
+import { setContext } from "@apollo/client/link/context";
+
+const httpLink = createHttpLink({
+  uri: "https://api.whop.com/public-graphql",
+});
 
 export async function GET() {
-  try {
-    const headersList = await headers();
+  const headersList = await headers();
+  const token = headersList.get("x-whop-user-token");
 
-    // ✅ Extract and verify the user from the x-whop-user-token header
-    const { userId } = await whopSdk.verifyUserToken(headersList);
+  if (!token) {
+    return NextResponse.json({ error: "Missing token" }, { status: 401 });
+  }
 
-    // ❗Here you should have a list of companies you want to check for user access.
-    // For now, let’s hardcode a few company IDs you own or test with:
-    const knownCompanyIds = [
-      "biz_4j1aKXjudxeCRt", // Example Company 1
-      "biz_abc1234567890", // Add more real ones here as needed
-    ];
+  const authLink = setContext((_, { headers }) => {
+    return {
+      headers: {
+        ...headers,
+        authorization: `Bearer ${process.env.WHOP_API_KEY}`,
+        "x-whop-user-token": token,
+      },
+    };
+  });
 
-    const companiesWithAccess = [];
+  const client = new ApolloClient({
+    link: authLink.concat(httpLink),
+    cache: new InMemoryCache(),
+  });
 
-    for (const companyId of knownCompanyIds) {
-      const result = await whopSdk.access.checkIfUserHasAccessToCompany({
-        companyId,
-        userId,
-      });
-
-      if (result.hasAccess) {
-        companiesWithAccess.push({
-          id: companyId,
-          name: `${companyId} (${result.accessLevel})`, // optional - improve this later
-        });
+  const GET_USER_MEMBERSHIPS = gql`
+    query GetUserMemberships {
+      getUserMemberships {
+        nodes {
+          company {
+            id
+            title
+          }
+        }
       }
     }
+  `;
 
-    return NextResponse.json({ companies: companiesWithAccess });
-  } catch (err) {
-    console.error("Whop Company Fetch Error:", err);
-    return NextResponse.json({ error: "Unauthorized or failed" }, { status: 401 });
+  try {
+    const { data } = await client.query({ query: GET_USER_MEMBERSHIPS });
+    const companies = data.getUserMemberships.nodes.map((node: any) => node.company);
+    return NextResponse.json({ companies });
+  } catch (error) {
+    console.error("Apollo Error:", error);
+    return NextResponse.json({ error: "Failed to fetch companies" }, { status: 500 });
   }
 }
