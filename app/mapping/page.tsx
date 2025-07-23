@@ -4,32 +4,30 @@ import { useEffect, useState } from "react";
 
 export default function MappingPage() {
   const [accounts, setAccounts] = useState([]);
-  const [companies, setCompanies] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState("");
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [message, setMessage] = useState("");
 
+  const companies = [
+    { id: "biz_4j1aKXjudxeCRt", name: "Ambro" },
+    { id: "biz_abc123", name: "TJR" },
+    { id: "biz_xyz456", name: "Khyzr" },
+    { id: "biz_srp4l", name: "SRP Test Whop" },
+    // Add more here
+  ];
+
   // Fetch verified connected accounts
   useEffect(() => {
     fetch("/api/connect")
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         const verified = data.accounts.filter((a: any) => a.verified);
         setAccounts(verified);
         if (verified.length > 0) {
           setSelectedAccount(verified[0].id);
         }
-      });
-  }, []);
-
-  // Fetch companies from the Whop company route
-  useEffect(() => {
-    fetch("/api/whop/companies")
-      .then(res => res.json())
-      .then(data => {
-        setCompanies(data.companies || []);
-        if (data.companies?.length > 0) {
-          setSelectedCompanyId(data.companies[0].id);
+        if (companies.length > 0) {
+          setSelectedCompanyId(companies[0].id);
         }
       });
   }, []);
@@ -54,7 +52,7 @@ export default function MappingPage() {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Map Verified Account to Whop Creator</h2>
+      <h2 className="text-2xl font-bold mb-4">Map Verified Account to Creator</h2>
 
       {/* Verified Social Accounts Dropdown */}
       <label className="block mb-2 text-sm font-semibold text-white">Select Verified Social Account</label>
@@ -70,19 +68,24 @@ export default function MappingPage() {
         ))}
       </select>
 
-      {/* Whop Companies Dropdown */}
-      <label className="block mb-2 text-sm font-semibold text-white">Select Creator Whop</label>
+      {/* Hardcoded Whop Companies Dropdown */}
+      <label className="block mb-2 text-sm font-semibold text-white">
+        Select Creator Whop
+      </label>
       <select
         value={selectedCompanyId}
         onChange={(e) => setSelectedCompanyId(e.target.value)}
-        className="w-full mb-4 p-2 rounded bg-black border border-white text-white"
+        className="w-full mb-2 p-2 rounded bg-black border border-white text-white"
       >
-        {companies.map((comp: any) => (
+        {companies.map((comp) => (
           <option key={comp.id} value={comp.id}>
-            {comp.title}
+            {comp.name}
           </option>
         ))}
       </select>
+      <p className="text-xs text-gray-400 mb-4">
+        Can't find the creator? DM @srp4l to request their Whop.
+      </p>
 
       <button
         onClick={handleSubmit}
