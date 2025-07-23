@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getWhopUserId } from "app/lib/getWhopUser";
+import { headers } from "next/headers";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,7 +8,9 @@ const supabase = createClient(
 );
 
 export async function GET() {
-  const userId = await getWhopUserId();
+  const headersList = await headers(); // ✅ await it
+  const userId = headersList.get("whop-user-id");
+
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -22,46 +24,5 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ accounts: data ?? [] });
-}
-
-export async function POST(req: NextRequest) {
-  const userId = await getWhopUserId();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const body = await req.json();
-    const { platform, username, profile_link } = body;
-
-    if (!platform || !username || !profile_link) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-    const { data, error } = await supabase
-      .from("connected_accounts")
-      .insert([
-        {
-          user_id: userId,
-          platform,
-          username,
-          profile_link,
-          code,
-          verified: false,
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ account: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
-  }
+  return NextResponse.json({ accounts: data });
 }

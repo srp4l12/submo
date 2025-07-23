@@ -13,27 +13,18 @@ export default function MappingPage() {
     { id: "biz_abc123", name: "TJR" },
     { id: "biz_xyz456", name: "Khyzr" },
     { id: "biz_srp4l", name: "SRP Test Whop" },
-    // Add more here
   ];
 
-  // Fetch verified connected accounts
-useEffect(() => {
-  fetch("/api/connect")
-    .then((res) => res.json())
-    .then((data) => {
-      const verified = data.accounts.filter((a: any) => a.verified);
-      console.log("✅ Verified Accounts:", verified);
-      console.log("✅ Companies:", companies);
-
-      setAccounts(verified);
-      if (verified.length > 0) {
-        setSelectedAccount(verified[0].id);
-      }
-      if (companies.length > 0) {
-        setSelectedCompanyId(companies[0].id);
-      }
-    });
-}, []);
+  useEffect(() => {
+    fetch("/api/connect")
+      .then((res) => res.json())
+      .then((data) => {
+        const verified = data.accounts.filter((a: any) => a.verified);
+        setAccounts(verified);
+        if (verified.length > 0) setSelectedAccount(verified[0].id);
+        if (companies.length > 0) setSelectedCompanyId(companies[0].id);
+      });
+  }, []);
 
   const handleSubmit = async () => {
     const res = await fetch("/api/mapping", {
@@ -45,7 +36,6 @@ useEffect(() => {
     });
 
     const result = await res.json();
-
     if (res.ok) {
       setMessage("✅ Account mapped successfully!");
     } else {
@@ -57,7 +47,6 @@ useEffect(() => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Map Verified Account to Creator</h2>
 
-      {/* Verified Social Accounts Dropdown */}
       <label className="block mb-2 text-sm font-semibold text-white">Select Verified Social Account</label>
       <select
         value={selectedAccount}
@@ -71,10 +60,7 @@ useEffect(() => {
         ))}
       </select>
 
-      {/* Hardcoded Whop Companies Dropdown */}
-      <label className="block mb-2 text-sm font-semibold text-white">
-        Select Creator Whop
-      </label>
+      <label className="block mb-2 text-sm font-semibold text-white">Select Creator Whop</label>
       <select
         value={selectedCompanyId}
         onChange={(e) => setSelectedCompanyId(e.target.value)}
@@ -86,8 +72,9 @@ useEffect(() => {
           </option>
         ))}
       </select>
+
       <p className="text-xs text-gray-400 mb-4">
-        Can't find the creator? DM @srp4l to request their Whop.
+        Can’t find the creator? DM @srp4l to request their Whop.
       </p>
 
       <button
