@@ -17,20 +17,23 @@ export default function MappingPage() {
   ];
 
   // Fetch verified connected accounts
-  useEffect(() => {
-    fetch("/api/connect")
-      .then((res) => res.json())
-      .then((data) => {
-        const verified = data.accounts.filter((a: any) => a.verified);
-        setAccounts(verified);
-        if (verified.length > 0) {
-          setSelectedAccount(verified[0].id);
-        }
-        if (companies.length > 0) {
-          setSelectedCompanyId(companies[0].id);
-        }
-      });
-  }, []);
+useEffect(() => {
+  fetch("/api/connect")
+    .then((res) => res.json())
+    .then((data) => {
+      const verified = data.accounts.filter((a: any) => a.verified);
+      console.log("✅ Verified Accounts:", verified);
+      console.log("✅ Companies:", companies);
+
+      setAccounts(verified);
+      if (verified.length > 0) {
+        setSelectedAccount(verified[0].id);
+      }
+      if (companies.length > 0) {
+        setSelectedCompanyId(companies[0].id);
+      }
+    });
+}, []);
 
   const handleSubmit = async () => {
     const res = await fetch("/api/mapping", {
