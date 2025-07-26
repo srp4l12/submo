@@ -1,8 +1,9 @@
 import { WhopServerSdk } from "@whop/api";
+import { cookies } from "next/headers";
 
 export const whopSdk = WhopServerSdk({
-  appId: "app_abIot1wcjVWZ9L",
-  appApiKey: "-dlmfWneauMZHVZKo1aSHzrd0MsDpIg7EWTetrHwzXs",
-  onBehalfOfUserId: "user_CmaVBIO7IQIE2",
-  companyId: "biz_4j1aKXjudxeCRt",
+  appId: process.env.NEXT_PUBLIC_WHOP_APP_ID!,
+  appApiKey: process.env.WHOP_API_KEY!,
+  onBehalfOfUserId: process.env.NEXT_PUBLIC_WHOP_AGENT_USER_ID!,
+  companyId: process.env.NEXT_PUBLIC_WHOP_COMPANY_ID!,
 });
