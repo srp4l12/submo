@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
+// Create Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -8,7 +9,7 @@ const supabase = createClient(
 
 // GET: Fetch connected accounts
 export async function GET() {
-  const headersList = await headers(); // ✅ FIXED: added await
+  const headersList = await headers(); // ✅ Don't forget await!
   const userId = headersList.get("whop-user-id");
 
   if (!userId) {
@@ -31,9 +32,9 @@ export async function GET() {
   return new Response(JSON.stringify({ accounts: data }), { status: 200 });
 }
 
-// POST: Add a new connected account
+// POST: Save new social account
 export async function POST(req: Request) {
-  const headersList = await headers(); // ✅ FIXED: added await
+  const headersList = await headers(); // ✅ Don't forget await!
   const userId = headersList.get("whop-user-id");
 
   if (!userId) {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const { platform, username, profile_link } = body;
 
-  const code = Math.random().toString(36).substring(2, 8);
+  const code = Math.random().toString(36).substring(2, 8); // 6-char random code
 
   const { error } = await supabase.from("connected_accounts").insert([
     {
