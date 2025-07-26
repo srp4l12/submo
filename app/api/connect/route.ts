@@ -1,50 +1,66 @@
-import { NextRequest, NextResponse } from "next/server";
+import { whopSdk } from "app/lib/whop-sdk"; // ✅ adjust path if needed
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { getWhopUserId } from "app/lib/getWhopUser";
 
-// Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
 // GET: Fetch connected accounts
-export async function GET(req: NextRequest) {
-  const userId = await getWhopUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+export async function GET() {
+  const headersList = await headers();
+  const { userId } = await whopSdk.verifyUserToken(headersList); // ✅ verified user
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { data, error } = await supabase
     .from("connected_accounts")
     .select("*")
     .eq("user_id", userId);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
-}
-
-// POST: Save a new connected account
-export async function POST(req: NextRequest) {
-  const userId = await getWhopUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { platform, username, profile_link } = await req.json();
-  if (!platform || !username || !profile_link) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return NextResponse.json({ accounts: data }, { status: 200 });
+}
 
-  const { data, error } = await supabase.from("connected_accounts").insert([
+// POST: Add a new connected account
+export async function POST(req: Request) {
+  const headersList = await headers();
+  const { userId } = await whopSdk.verifyUserToken(headersList); // ✅ verified user
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+  const { platform, username, profile_link } = body;
+
+  if (!platform || !username || !profile_link) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const code = Math.random().toString(36).substring(2, 8);
+
+  const { error } = await supabase.from("connected_accounts").insert([
     {
       user_id: userId,
       platform,
       username,
       profile_link,
       code,
-      verified: false
-    }
+      verified: false,
+    },
   ]);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true, code });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ message: "Account submitted!" }, { status: 200 });
 }
