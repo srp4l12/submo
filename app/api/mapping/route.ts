@@ -1,14 +1,36 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// GET all mappings for this user (optional, useful for debugging)
+export async function GET() {
+  const headersList = await headers();
+  const userId = headersList.get("whop-user-id");
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from("account_whop_mappings")
+    .select("*")
+    .eq("user_id", userId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ mappings: data }, { status: 200 });
+}
+
+// POST: Save a mapping between connected account and creator whop
 export async function POST(req: Request) {
-  const headersList = await headers(); // ✅ await it
+  const headersList = await headers();
   const userId = headersList.get("whop-user-id");
 
   if (!userId) {
