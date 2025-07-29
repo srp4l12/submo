@@ -24,7 +24,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
     }
 
-    const res = await fetch(profileUrl);
+    const sanitizedUrl = profileUrl.split("?")[0];
+    const res = await fetch(sanitizedUrl);
     const html = await res.text();
     const $ = cheerio.load(html);
 
