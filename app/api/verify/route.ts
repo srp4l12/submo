@@ -14,36 +14,47 @@ export async function POST(req: Request) {
     }
 
     let profileUrl = "";
-    const cleanUsername = username.replace(/\/$/, "").split("?")[0];
-
     if (platform === "TikTok") {
-      profileUrl = `https://www.tiktok.com/@${cleanUsername}`;
+      profileUrl = `https://www.tiktok.com/@${username}`;
     } else if (platform === "Instagram") {
-      profileUrl = `https://www.instagram.com/${cleanUsername}/`;
+      profileUrl = `https://www.instagram.com/${username}/`;
     } else if (platform === "YouTube") {
-      profileUrl = `https://www.youtube.com/@${cleanUsername}`;
+      profileUrl = `https://www.youtube.com/@${username}`;
     } else {
       return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
     }
 
-    const res = await fetch(profileUrl);
+    const res = await fetch(profileUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+      },
+    });
     const html = await res.text();
     const $ = cheerio.load(html);
 
     let found = false;
 
     if (platform === "TikTok") {
-      const bio = $('meta[name="description"]').attr("content") || "";
-      console.log("Fetched TikTok bio:", bio);
-      found = bio.includes(code);
+      const scriptContent = $('script[id="__UNIVERSAL_DATA_FOR_REHYDRATION__"]').html();
+      if (scriptContent) {
+        try {
+          const json = JSON.parse(scriptContent);
+          const bio = json?.props?.pageProps?.userInfo?.user?.signature || "";
+          console.log("TikTok bio:", bio);
+          found = bio.includes(code);
+        } catch (err) {
+          console.error("Error parsing TikTok script:", err);
+        }
+      }
     } else if (platform === "Instagram") {
-      const bio = $('meta[property="og:description"]').attr("content") || "";
-      console.log("Fetched Instagram bio:", bio);
-      found = bio.includes(code);
+      const metaContent = $('meta[property="og:description"]').attr("content") || "";
+      console.log("Instagram bio:", metaContent);
+      found = metaContent.includes(code);
     } else if (platform === "YouTube") {
       const match = html.match(/"description":"(.*?)"/);
       const bio = match ? match[1] : "";
-      console.log("Fetched YouTube bio:", bio);
+      console.log("YouTube bio:", bio);
       found = bio.includes(code);
     }
 
