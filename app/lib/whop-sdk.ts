@@ -1,4 +1,4 @@
-import { WhopServerSdk } from "@whop/api";
+import { WhopServerSdk, makeUserTokenVerifier } from "@whop/api";
 import { cookies } from "next/headers";
 
 export const whopSdk = WhopServerSdk({

@@ -9,7 +9,7 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@apollo/client": "^3.13.8",
+		"@apollo/client": "^3.13.9",
 		"@paralleldrive/cuid2": "^2.2.2",
 		"@radix-ui/react-label": "^2.1.7",
 		"@radix-ui/react-slot": "^1.2.3",
@@ -19,7 +19,6 @@
 		"@whop/api": "^0.0.34",
 		"@whop/iframe": "^0.0.3",
 		"@whop/react": "^0.2.25",
-		"apollo-client": "^2.6.10",
 		"cheerio": "^1.1.0",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
