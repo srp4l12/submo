@@ -14,18 +14,19 @@ export async function POST(req: Request) {
     }
 
     let profileUrl = "";
+    const cleanUsername = username.replace(/\/$/, "").split("?")[0];
+
     if (platform === "TikTok") {
-      profileUrl = `https://www.tiktok.com/@${username}`;
+      profileUrl = `https://www.tiktok.com/@${cleanUsername}`;
     } else if (platform === "Instagram") {
-      profileUrl = `https://www.instagram.com/${username}/`;
+      profileUrl = `https://www.instagram.com/${cleanUsername}/`;
     } else if (platform === "YouTube") {
-      profileUrl = `https://www.youtube.com/@${username}`;
+      profileUrl = `https://www.youtube.com/@${cleanUsername}`;
     } else {
       return NextResponse.json({ error: "Unsupported platform" }, { status: 400 });
     }
 
-    const sanitizedUrl = profileUrl.split("?")[0];
-    const res = await fetch(sanitizedUrl);
+    const res = await fetch(profileUrl);
     const html = await res.text();
     const $ = cheerio.load(html);
 
@@ -33,13 +34,16 @@ export async function POST(req: Request) {
 
     if (platform === "TikTok") {
       const bio = $('meta[name="description"]').attr("content") || "";
+      console.log("Fetched TikTok bio:", bio);
       found = bio.includes(code);
     } else if (platform === "Instagram") {
       const bio = $('meta[property="og:description"]').attr("content") || "";
+      console.log("Fetched Instagram bio:", bio);
       found = bio.includes(code);
     } else if (platform === "YouTube") {
       const match = html.match(/"description":"(.*?)"/);
       const bio = match ? match[1] : "";
+      console.log("Fetched YouTube bio:", bio);
       found = bio.includes(code);
     }
 
