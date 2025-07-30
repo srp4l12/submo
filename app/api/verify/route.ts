@@ -78,7 +78,7 @@ export async function POST(req: Request) {
         }
       }
     } else if (platform === "Instagram") {
-      const metaContent = $('meta[property="og:description"]').attr("content") || "";
+      const metaContent = $('meta[name="description"]').attr("content") || "";
       console.log("Instagram bio:", metaContent);
       found = metaContent.includes(code);
     } else if (platform === "YouTube") {
