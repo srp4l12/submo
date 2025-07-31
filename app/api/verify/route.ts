@@ -78,25 +78,42 @@ export async function POST(req: Request) {
         }
       }
     } else if (platform === "Instagram") {
+      // Debug: Log the response status and basic info
+      console.log("Instagram response status:", res.status);
+      console.log("Instagram response headers:", Object.fromEntries(res.headers.entries()));
+      console.log("HTML length:", html.length);
+      console.log("HTML first 500 chars:", html.substring(0, 500));
+      
       // Try multiple methods to find Instagram bio
       let bio = "";
       
       // Method 1: Meta description
       const metaContent = $('meta[name="description"]').attr("content") || "";
+      console.log("Method 1 - Meta description:", metaContent);
       
       // Method 2: Look for biography in page content
       const bioMatch = html.match(/"biography":"([^"]*?)"/);
       if (bioMatch) {
         bio = bioMatch[1];
+        console.log("Method 2 - Biography match found:", bio);
       }
       
-      // Method 3: Try structured data
+      // Method 3: Try other common Instagram bio patterns
+      const bioMatch2 = html.match(/"description":"([^"]*?)"/);
+      if (bioMatch2 && !bio) {
+        bio = bioMatch2[1];
+        console.log("Method 3 - Description match found:", bio);
+      }
+      
+      // Method 4: Try structured data
       const scriptTags = $('script[type="application/ld+json"]');
+      console.log("Found", scriptTags.length, "JSON-LD script tags");
       scriptTags.each((i, el) => {
         try {
           const jsonData = JSON.parse($(el).html() || "");
           if (jsonData.description && !bio) {
             bio = jsonData.description;
+            console.log("Method 4 - JSON-LD found:", bio);
           }
         } catch (e) {
           // Ignore JSON parse errors
@@ -105,8 +122,9 @@ export async function POST(req: Request) {
       
       // Use the best bio we found
       const finalBio = bio || metaContent;
-      console.log("Instagram bio found:", finalBio);
-      found = finalBio.includes(code);
+      console.log("Final Instagram bio:", finalBio);
+      console.log("Looking for code:", code);
+      found = finalBio.toLowerCase().includes(code.toLowerCase());
       
     } else if (platform === "YouTube") {
       const match = html.match(/"description":"(.*?)"/);
