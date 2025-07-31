@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const code = Math.random().toString(36).substring(2, 8);
+  const code = Math.random().toString(36).substring(2, 8). toUpperCase;
 
   const { error } = await supabase.from("connected_accounts").insert([
     {
