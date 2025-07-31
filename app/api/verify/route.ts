@@ -80,9 +80,7 @@ export async function POST(req: Request) {
     } else if (platform === "Instagram") {
       // Debug: Log the response status and basic info
       console.log("Instagram response status:", res.status);
-      console.log("Instagram response headers:", Object.fromEntries(res.headers.entries()));
       console.log("HTML length:", html.length);
-      console.log("HTML first 500 chars:", html.substring(0, 500));
       
       // Try multiple methods to find Instagram bio
       let bio = "";
@@ -91,40 +89,67 @@ export async function POST(req: Request) {
       const metaContent = $('meta[name="description"]').attr("content") || "";
       console.log("Method 1 - Meta description:", metaContent);
       
-      // Method 2: Look for biography in page content
-      const bioMatch = html.match(/"biography":"([^"]*?)"/);
-      if (bioMatch) {
-        bio = bioMatch[1];
-        console.log("Method 2 - Biography match found:", bio);
+      // Method 2: Look for biography in page content (multiple patterns)
+      const bioPatterns = [
+        /"biography":"([^"]*?)"/,
+        /"bio":"([^"]*?)"/,
+        /"description":"([^"]*?)"/,
+        /biography&quot;:&quot;([^&]*?)&quot;/,
+        /bio&quot;:&quot;([^&]*?)&quot;/,
+        /"full_name":"[^"]*","biography":"([^"]*?)"/
+      ];
+      
+      for (let i = 0; i < bioPatterns.length; i++) {
+        const match = html.match(bioPatterns[i]);
+        if (match && match[1]) {
+          bio = match[1];
+          console.log(`Method 2.${i + 1} - Pattern ${i + 1} found:`, bio);
+          break;
+        }
       }
       
-      // Method 3: Try other common Instagram bio patterns
-      const bioMatch2 = html.match(/"description":"([^"]*?)"/);
-      if (bioMatch2 && !bio) {
-        bio = bioMatch2[1];
-        console.log("Method 3 - Description match found:", bio);
-      }
+      // Method 3: Look in script tags for user data
+      const scriptTags = $('script').not('[src]');
+      console.log("Found", scriptTags.length, "inline script tags");
       
-      // Method 4: Try structured data
-      const scriptTags = $('script[type="application/ld+json"]');
-      console.log("Found", scriptTags.length, "JSON-LD script tags");
       scriptTags.each((i, el) => {
-        try {
-          const jsonData = JSON.parse($(el).html() || "");
-          if (jsonData.description && !bio) {
-            bio = jsonData.description;
-            console.log("Method 4 - JSON-LD found:", bio);
+        if (bio) return; // Skip if we already found bio
+        
+        const scriptContent = $(el).html() || "";
+        if (scriptContent.includes('biography') || scriptContent.includes('"bio"')) {
+          console.log(`Script ${i} contains bio data`);
+          
+          // Try to extract from various script formats
+          const scriptBioPatterns = [
+            /"biography":"([^"]*?)"/,
+            /"bio":"([^"]*?)"/,
+            /biography&quot;:&quot;([^&]*?)&quot;/,
+            /bio&quot;:&quot;([^&]*?)&quot;/
+          ];
+          
+          for (const pattern of scriptBioPatterns) {
+            const match = scriptContent.match(pattern);
+            if (match && match[1]) {
+              bio = match[1];
+              console.log("Found bio in script:", bio);
+              break;
+            }
           }
-        } catch (e) {
-          // Ignore JSON parse errors
         }
       });
+      
+      // Method 4: Search for any occurrence of the code in the entire HTML
+      console.log("Searching entire HTML for code:", code);
+      const codeFoundInHtml = html.toLowerCase().includes(code.toLowerCase());
+      console.log("Code found anywhere in HTML:", codeFoundInHtml);
       
       // Use the best bio we found
       const finalBio = bio || metaContent;
       console.log("Final Instagram bio:", finalBio);
       console.log("Looking for code:", code);
-      found = finalBio.toLowerCase().includes(code.toLowerCase());
+      
+      // Check both the bio and the entire HTML
+      found = finalBio.toLowerCase().includes(code.toLowerCase()) || codeFoundInHtml;
       
     } else if (platform === "YouTube") {
       const match = html.match(/"description":"(.*?)"/);
