@@ -78,9 +78,36 @@ export async function POST(req: Request) {
         }
       }
     } else if (platform === "Instagram") {
+      // Try multiple methods to find Instagram bio
+      let bio = "";
+      
+      // Method 1: Meta description
       const metaContent = $('meta[name="description"]').attr("content") || "";
-      console.log("Instagram bio:", metaContent);
-      found = metaContent.includes(code);
+      
+      // Method 2: Look for biography in page content
+      const bioMatch = html.match(/"biography":"([^"]*?)"/);
+      if (bioMatch) {
+        bio = bioMatch[1];
+      }
+      
+      // Method 3: Try structured data
+      const scriptTags = $('script[type="application/ld+json"]');
+      scriptTags.each((i, el) => {
+        try {
+          const jsonData = JSON.parse($(el).html() || "");
+          if (jsonData.description && !bio) {
+            bio = jsonData.description;
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
+        }
+      });
+      
+      // Use the best bio we found
+      const finalBio = bio || metaContent;
+      console.log("Instagram bio found:", finalBio);
+      found = finalBio.includes(code);
+      
     } else if (platform === "YouTube") {
       const match = html.match(/"description":"(.*?)"/);
       const bio = match ? match[1] : "";
